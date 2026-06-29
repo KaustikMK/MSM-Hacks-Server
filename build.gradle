@@ -1,0 +1,65 @@
+plugins {
+    id 'java'
+    id 'distribution'
+}
+
+group = 'com.zewsic'
+version = '1.0.0'
+
+def mainClassName = 'com.zewsic.msm_server.Main'
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
+}
+
+sourceSets {
+    main {
+        java {
+            srcDir 'src'
+            exclude 'com/pengrad/telegrambot/**'
+        }
+        resources {
+            srcDir 'src'
+            exclude '**/*.java'
+        }
+    }
+}
+
+dependencies {
+    implementation fileTree(dir: 'src/lib', include: ['*.jar'])
+    implementation 'com.github.pengrad:java-telegram-bot-api:6.1.0'
+}
+
+jar {
+    archiveBaseName = 'MSM-Hacks-Server'
+    manifest {
+        attributes(
+            'Main-Class': mainClassName,
+            'Class-Path': configurations.runtimeClasspath.files.collect { "lib/${it.name}" }.join(' ')
+        )
+    }
+}
+
+tasks.register('copyRuntimeLibs', Copy) {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    from configurations.runtimeClasspath
+    into layout.buildDirectory.dir('runtime-libs')
+}
+
+distributions {
+    main {
+        distributionBaseName = 'MSM-Hacks-Server'
+        contents {
+            duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+            from(tasks.jar) {
+                into 'lib'
+            }
+            from(configurations.runtimeClasspath) {
+                into 'lib'
+            }
+        }
+    }
+}
+
+assemble.dependsOn tasks.named('copyRuntimeLibs')
